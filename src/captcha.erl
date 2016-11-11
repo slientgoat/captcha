@@ -21,7 +21,7 @@ new(Key) ->
   os:cmd(Cmd),
   CryptKey = crypto:strong_rand_bytes(16),
   {ok, BinPng} = file:read_file(File),
-%%  file:delete(File),
+  file:delete(File),
   NewCode = string:to_lower(Code),
   Sha = crypto:hmac('sha',CryptKey, integer_to_list(lists:sum(NewCode)) ++ NewCode),
   Captcha = #captcha{key = Key,sha = Sha,cryptkey = CryptKey},
@@ -30,14 +30,20 @@ new(Key) ->
 
 check(Key, Code) ->
   NewCode = string:to_lower(Code),
-  Captcha = hd(ets:lookup(captcha,Key)),
-  Sha =   Captcha#captcha.sha,
-  case crypto:hmac('sha',Captcha#captcha.cryptkey, integer_to_list(lists:sum(NewCode)) ++ NewCode) of
-    Sha ->
-      true;
-    _ ->
-      false
+  Result = ets:lookup(captcha,Key),
+  case Result of
+    [] ->
+      false;
+    [Captcha] ->
+      Sha =   Captcha#captcha.sha,
+      case crypto:hmac('sha',Captcha#captcha.cryptkey, integer_to_list(lists:sum(NewCode)) ++ NewCode) of
+        Sha ->
+          true;
+        _ ->
+          false
+      end
   end.
+
 
 generate_rand(Length) ->
   rand:seed(exs64),
