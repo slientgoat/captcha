@@ -38,7 +38,7 @@ check(Key, Code) ->
       Sha =   Captcha#captcha.sha,
       case crypto:hmac('sha',Captcha#captcha.cryptkey, integer_to_list(lists:sum(NewCode)) ++ NewCode) of
         Sha ->
-          ets:delete(captcha, Captcha),
+          ets:delete(captcha, Key),
           true;
         _ ->
           false
