@@ -1,7 +1,7 @@
 -module(captcha).
 -compile(export_all).
 
--record(captcha,{key,sha,cryptkey}).
+-record(captcha,{key,sha,cryptkey,times}).
 
 
 init()->
@@ -24,7 +24,7 @@ new(Key) ->
   file:delete(File),
   NewCode = string:to_lower(Code),
   Sha = crypto:hmac('sha',CryptKey, integer_to_list(lists:sum(NewCode)) ++ NewCode),
-  Captcha = #captcha{key = Key,sha = Sha,cryptkey = CryptKey},
+  Captcha = #captcha{key = Key,sha = Sha,cryptkey = CryptKey, times = 0},
   true = ets:insert(captcha, Captcha),
   BinPng.
 
@@ -36,11 +36,17 @@ check(Key, Code) ->
       false;
     [Captcha] ->
       Sha =   Captcha#captcha.sha,
+      Times =   Captcha#captcha.times,
       case crypto:hmac('sha',Captcha#captcha.cryptkey, integer_to_list(lists:sum(NewCode)) ++ NewCode) of
         Sha ->
-          ets:delete(captcha, Key),
+          case Times of
+            2->
+              ets:delete(captcha, Key);
+            _->
+              true = ets:insert(captcha, Captcha#captcha{times = Times+1})
+          end,
           true;
-        _ ->
+        _S ->
           false
       end
   end.
