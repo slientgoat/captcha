@@ -36,21 +36,16 @@ check(Key, Code) ->
       false;
     [Captcha] ->
       Sha =   Captcha#captcha.sha,
-      Times =   Captcha#captcha.times,
       case crypto:hmac('sha',Captcha#captcha.cryptkey, integer_to_list(lists:sum(NewCode)) ++ NewCode) of
         Sha ->
-          case Times of
-            2->
-              ets:delete(captcha, Key);
-            _->
-              true = ets:insert(captcha, Captcha#captcha{times = Times+1})
-          end,
           true;
         _S ->
           false
       end
   end.
 
+del(Key)->
+  ets:delete(captcha, Key).
 
 generate_rand(Length) ->
   rand:seed(exs64),
